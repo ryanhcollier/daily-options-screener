@@ -117,37 +117,23 @@
 
 <body class="antialiased selection:bg-blue-500/30">
 
+    <!-- Toast Notifications Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
     <div class="max-w-7xl mx-auto p-4 lg:p-8 flex flex-col gap-6">
 
-        <!-- Header & Search Bar -->
+        <!-- Header & Favorites Bar -->
         <header
-            class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-800/50 p-6 rounded-2xl border border-slate-700/50 shadow-lg backdrop-blur-sm">
-            <div>
-                <h1
-                    class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent flex items-center gap-3">
-                    <i data-lucide="activity" class="text-blue-400 h-6 w-6"></i>
-                    Options Screener
-                </h1>
-                <p class="text-slate-400 text-sm mt-1">Daily High-Probability Setup Scanner with 70% or better win rate
-                </p>
-                <div class="flex items-center gap-2 mt-3 text-slate-500 text-xs font-mono font-medium tracking-wide">
-                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
-                    <span id="currentDateDisplay">--</span>
-                </div>
+            class="flex flex-col gap-2 bg-slate-800/50 p-4 md:p-6 rounded-2xl border border-slate-700/50 shadow-lg backdrop-blur-sm">
+            <div
+                class="flex items-center gap-2 text-slate-500 text-xs font-mono font-medium tracking-wide border-b border-slate-700/50 pb-2 mb-1 w-max">
+                <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                <span id="currentDateDisplay">--</span>
             </div>
 
-            <div class="w-full md:w-96 relative group">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i data-lucide="search"
-                        class="h-5 w-5 text-slate-500 group-focus-within:text-blue-400 transition-colors"></i>
-                </div>
-                <input type="text" id="tickerInput"
-                    class="block w-full pl-10 pr-3 py-3 border border-slate-700 rounded-xl leading-5 bg-slate-800/80 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase transition-all shadow-inner"
-                    placeholder="ENTER TICKER (e.g. SPY)" autocomplete="off">
-                <button id="scanBtn"
-                    class="absolute inset-y-1.5 right-1.5 bg-blue-600 hover:bg-blue-500 text-white px-4 rounded-lg text-sm font-medium transition-colors shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none">
-                    SCAN
-                </button>
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide min-h-[36px]">
+                <!-- Favorites go here -->
+                <div id="favoritesContainer" class="flex gap-2 items-center"></div>
             </div>
         </header>
 
@@ -182,26 +168,60 @@
             <!-- Right Content: Strategy Cards Grid -->
             <div class="lg:col-span-3">
 
-                <!-- Current Ticker Header Info (Hidden initially) -->
+                <!-- Current Ticker Header Info & Search -->
+                <!-- Current Ticker Header Info & Search -->
                 <div id="tickerStatsHeader"
-                    class="hidden flex items-center justify-between bg-slate-800/30 rounded-xl p-4 mb-6 border border-slate-700/30">
-                    <div class="flex items-center gap-4">
-                        <h2 id="currentTicker" class="text-3xl font-bold tracking-tight text-white font-mono">--</h2>
-                        <div class="h-8 w-px bg-slate-700"></div>
-                        <div class="flex flex-col">
-                            <span class="text-xs text-slate-400 uppercase tracking-wider">Current Price</span>
-                            <span id="currentPrice" class="text-lg font-semibold font-mono text-slate-200">$--</span>
-                        </div>
+                    class="flex flex-wrap md:flex-nowrap items-center justify-between bg-slate-800/30 rounded-xl p-4 mb-6 border border-slate-700/30 gap-4">
+
+                    <!-- Left: Ticker Symbol -->
+                    <div class="flex items-center shrink-0">
+                        <h2 id="currentTicker" class="text-3xl font-bold tracking-tight text-white font-mono w-20">--
+                        </h2>
                     </div>
-                    <div class="flex gap-4 text-sm font-mono text-slate-400">
-                        <div class="flex flex-col items-end">
-                            <span class="text-[10px] uppercase tracking-wide">IV Rank</span>
-                            <span id="tickerIVR" class="font-medium">--%</span>
+
+                    <!-- Right: Stats & Tools Group -->
+                    <div
+                        class="flex flex-wrap md:flex-nowrap items-center gap-4 ml-auto w-full md:w-auto mt-2 md:mt-0 justify-end">
+
+                        <!-- Stats Group -->
+                        <div class="flex items-center gap-4 mr-2 md:mr-4 shrink-0">
+                            <div class="h-8 w-px bg-slate-700 hidden md:block"></div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[10px] text-slate-400 uppercase tracking-wider">Price</span>
+                                <span id="currentPrice"
+                                    class="text-lg font-semibold font-mono text-slate-200">$--</span>
+                            </div>
+                            <div class="h-8 w-px bg-slate-700"></div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[10px] uppercase tracking-wide text-slate-400">IV Rank</span>
+                                <span id="tickerIVR" class="font-medium font-mono text-slate-300">--%</span>
+                            </div>
+                            <div class="h-8 w-px bg-slate-700"></div>
+                            <div class="flex flex-col items-end">
+                                <span class="text-[10px] uppercase tracking-wide text-slate-400">14D RSI</span>
+                                <span id="tickerRSI" class="font-medium font-mono text-slate-300">--</span>
+                            </div>
                         </div>
-                        <div class="h-8 w-px bg-slate-700"></div>
-                        <div class="flex flex-col items-end">
-                            <span class="text-[10px] uppercase tracking-wide">14D RSI</span>
-                            <span id="tickerRSI" class="font-medium">--</span>
+
+                        <!-- Tools Group (Search & +) -->
+                        <div class="flex items-center gap-3 shrink-0 w-full md:w-auto justify-end">
+                            <div class="relative group w-full md:w-48">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <i data-lucide="search"
+                                        class="h-4 w-4 text-slate-500 group-focus-within:text-blue-400 transition-colors"></i>
+                                </div>
+                                <input type="text" id="tickerInput" onclick="this.value=''"
+                                    class="block w-full pl-9 pr-3 py-2 border border-slate-700 rounded-lg leading-5 bg-slate-800/80 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm uppercase transition-all shadow-inner"
+                                    placeholder="TICKER" autocomplete="off">
+                                <button id="scanBtn"
+                                    class="absolute inset-y-1 right-1 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded md:rounded border border-blue-500/50 text-xs font-bold transition-colors shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                                    SCAN
+                                </button>
+                            </div>
+                            <button type="button" onclick="addFavorite()" title="Add Favorite Ticker"
+                                class="shrink-0 flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800 border border-slate-600 hover:border-blue-500 hover:text-blue-400 text-slate-300 transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                                <i data-lucide="plus" class="w-5 h-5"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -234,7 +254,7 @@
                             </div>
                             <!-- Action Button (Hidden by default) -->
                             <button id="btn-take-strat1"
-                                onclick="takeTrade(1, 'Trend Call Credit Spread', 'Close at 50% max profit or if underlying closes above the short strike.')"
+                                onclick="openTOSModal(1, 'Trend Call Credit Spread', 'Close at 50% max profit or if underlying closes above the short strike.')"
                                 class="hidden w-full mb-4 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-xs font-bold tracking-wide transition-colors shadow-sm focus:ring-2 focus:ring-emerald-400 focus:outline-none flex justify-center items-center gap-2">
                                 <i data-lucide="plus-circle" class="w-4 h-4"></i> TAKE TRADE
                             </button>
@@ -295,7 +315,7 @@
                             </div>
                             <!-- Action Button -->
                             <button id="btn-take-strat2"
-                                onclick="takeTrade(2, 'Mean-Revert Short Put', 'Close at 50% Max Profit or at 21 DTE (whichever comes first) to minimize tail risk.')"
+                                onclick="openTOSModal(2, 'Mean-Revert Short Put', 'Close at 50% Max Profit or at 21 DTE (whichever comes first) to minimize tail risk.')"
                                 class="hidden w-full mb-4 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-xs font-bold tracking-wide transition-colors shadow-sm focus:ring-2 focus:ring-emerald-400 focus:outline-none flex justify-center items-center gap-2">
                                 <i data-lucide="plus-circle" class="w-4 h-4"></i> TAKE TRADE
                             </button>
@@ -353,7 +373,7 @@
                             </div>
                             <!-- Action Button -->
                             <button id="btn-take-strat3"
-                                onclick="takeTrade(3, 'Covered Call Protocol', 'Roll at 21 DTE or if the short call is tested, capturing theta decay while maintaining the core stock position.')"
+                                onclick="openTOSModal(3, 'Covered Call Protocol', 'Roll at 21 DTE or if the short call is tested, capturing theta decay while maintaining the core stock position.')"
                                 class="hidden w-full mb-4 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-xs font-bold tracking-wide transition-colors shadow-sm focus:ring-2 focus:ring-emerald-400 focus:outline-none flex justify-center items-center gap-2">
                                 <i data-lucide="plus-circle" class="w-4 h-4"></i> TAKE TRADE
                             </button>
@@ -412,7 +432,7 @@
                             </div>
                             <!-- Action Button -->
                             <button id="btn-take-strat4"
-                                onclick="takeTrade(4, '5-Day Low Mean Revert', 'Close when 2-Day RSI crosses back above 50, OR enact a strict 5-Day Time Stop.')"
+                                onclick="openTOSModal(4, '5-Day Low Mean Revert', 'Close when 2-Day RSI crosses back above 50, OR enact a strict 5-Day Time Stop.')"
                                 class="hidden w-full mb-4 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-xs font-bold tracking-wide transition-colors shadow-sm focus:ring-2 focus:ring-emerald-400 focus:outline-none flex justify-center items-center gap-2">
                                 <i data-lucide="plus-circle" class="w-4 h-4"></i> TAKE TRADE
                             </button>
@@ -455,6 +475,46 @@
         </div>
     </div>
 
+    <!-- TOS Entry Modal -->
+    <div id="tosModal"
+        class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div class="p-5 border-b border-slate-700 flex justify-between items-center bg-slate-800/80">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="copy" class="text-blue-400 w-5 h-5"></i> Log ThinkOrSwim Trade
+                </h3>
+                <button onclick="closeTOSModal()" class="text-slate-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-slate-300 mb-4 leading-relaxed">
+                    Paste the exact executed order string copied from ThinkOrSwim below to link live theoretical P/L
+                    tracking.
+                </p>
+                <textarea id="tosInputStr" rows="3"
+                    class="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-sm font-mono text-emerald-400 shadow-inner focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 transition-all"
+                    placeholder="e.g. BUY +1 SPY 100 21 JAN 22 450 CALL @3.50 LMT"></textarea>
+
+                <div
+                    class="bg-blue-900/20 border border-blue-900/50 rounded-lg p-3 flex gap-3 text-xs text-blue-300 mb-6">
+                    <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5"></i>
+                    <p>The parser will automatically detect the entry price, quantity, and position type (Long/Short)
+                        from your text.</p>
+                </div>
+
+                <div class="flex gap-3 justify-end">
+                    <button onclick="closeTOSModal()"
+                        class="px-5 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:bg-slate-700 transition-colors focus:outline-none">Cancel</button>
+                    <button onclick="submitTOSTrade()"
+                        class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold tracking-wide shadow transition-colors flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <i data-lucide="check" class="w-4 h-4"></i> Track Setup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script>
         // Initialize Icons
@@ -466,8 +526,52 @@
 
         let globalState = {
             currentScanned: null,
-            activeTrades: [] // Array of active trades to simulate progress
+            activeTrades: [], // Array of active trades
+            pendingTrade: null, // Holds data temporarily while the TOS Modal is open
+            favoriteTickers: [] // Array of pinned tickers
         };
+
+        // Custom Toast Notification System
+        function showToast(message, type = 'error') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const isError = type === 'error';
+
+            // Base classes for animation and styling
+            toast.className = `transform transition-all duration-300 translate-y-full opacity-0 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border backdrop-blur-md pointer-events-auto ${isError
+                ? 'bg-red-950/80 border-red-700/50 text-red-100'
+                : 'bg-slate-800 border-slate-700 text-slate-200'
+                }`;
+
+            // Icon
+            const iconHtml = isError
+                ? '<i data-lucide="alert-circle" class="w-5 h-5 text-red-500 shrink-0"></i>'
+                : '<i data-lucide="info" class="w-5 h-5 text-blue-400 shrink-0"></i>';
+
+            toast.innerHTML = `
+                ${iconHtml}
+                <span class="text-sm font-medium tracking-wide leading-tight">${message}</span>
+                <button class="ml-auto text-slate-400 hover:text-white transition-colors focus:outline-none" onclick="this.parentElement.remove()">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+            lucide.createIcons({ root: toast });
+
+            // Animate in
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-full', 'opacity-0');
+            });
+
+            // Animate out and remove after 4 seconds
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
 
         // Seeded random number generator so a ticker always yields the same result per session
         function cyrb128(str) {
@@ -662,22 +766,158 @@
             }
         }
 
-        function takeTrade(stratNum, stratName, exitRules) {
+        // ---------------------------------------------------
+        // 4.5 Favorite Tickers Management
+        // ---------------------------------------------------
+        function loadFavoritesFromStorage() {
+            const saved = localStorage.getItem('optionsScreenerFavorites');
+            if (saved) {
+                try {
+                    globalState.favoriteTickers = JSON.parse(saved);
+                    renderFavorites();
+                } catch (e) {
+                    console.error("Failed to load favorites", e);
+                }
+            }
+        }
+
+        function saveFavoritesToStorage() {
+            localStorage.setItem('optionsScreenerFavorites', JSON.stringify(globalState.favoriteTickers));
+        }
+
+        function addFavorite() {
+            const inputEl = document.getElementById('tickerInput');
+            const ticker = inputEl ? inputEl.value.trim().toUpperCase() : '';
+
+            if (ticker) {
+                if (!/^[A-Z]{1,5}$/.test(ticker)) {
+                    showToast('Please enter a valid ticker symbol (1-5 letters).', 'error');
+                    return;
+                }
+
+                if (globalState.favoriteTickers.length >= 10) {
+                    showToast('You can only pin up to 10 favorite tickers.', 'error');
+                    return;
+                }
+
+                if (!globalState.favoriteTickers.includes(ticker)) {
+                    globalState.favoriteTickers.push(ticker);
+                    saveFavoritesToStorage();
+                    renderFavorites();
+                } else {
+                    showToast(`${ticker} is already in your favorites list.`, 'error');
+                }
+            } else {
+                showToast('Please enter a ticker in the search box to add as a favorite.', 'error');
+            }
+        }
+
+        function removeFavorite(evt, ticker) {
+            evt.stopPropagation(); // Prevent loading the ticker when clicking the 'x'
+            globalState.favoriteTickers = globalState.favoriteTickers.filter(t => t !== ticker);
+            saveFavoritesToStorage();
+            renderFavorites();
+        }
+
+        function loadFavorite(ticker) {
+            document.getElementById('tickerInput').value = ticker;
+            scanTicker(ticker);
+        }
+
+        function renderFavorites() {
+            const container = document.getElementById('favoritesContainer');
+            if (!container) return;
+
+            let html = '';
+            globalState.favoriteTickers.forEach(ticker => {
+                html += `
+                <div class="group relative flex items-center bg-slate-800/80 hover:bg-blue-900/40 border border-slate-700/80 hover:border-blue-500/50 rounded-full px-3 py-1 cursor-pointer transition-all shadow-sm shrink-0"
+                     onclick="loadFavorite('${ticker}')">
+                    <span class="text-xs font-bold text-slate-300 group-hover:text-blue-300 mr-1">${ticker}</span>
+                    <button onclick="removeFavorite(event, '${ticker}')" class="text-slate-500 hover:text-red-400 focus:outline-none transition-colors ml-1 opacity-60 hover:opacity-100" title="Remove Favorite">
+                        <i data-lucide="x" class="w-3 h-3"></i>
+                    </button>
+                </div>
+                `;
+            });
+            container.innerHTML = html;
+            lucide.createIcons();
+        }
+
+        function openTOSModal(stratNum, stratName, exitRules) {
             if (!globalState.currentScanned) return;
+            globalState.pendingTrade = {
+                ticker: globalState.currentScanned.ticker,
+                stratNum,
+                stratName,
+                exitRules
+            };
+            document.getElementById('tosInputStr').value = '';
+            document.getElementById('tosModal').classList.remove('hidden');
+        }
+
+        function closeTOSModal() {
+            globalState.pendingTrade = null;
+            document.getElementById('tosModal').classList.add('hidden');
+        }
+
+        function submitTOSTrade() {
+            if (!globalState.pendingTrade) return;
+
+            const rawTOS = document.getElementById('tosInputStr').value.trim();
+            if (!rawTOS) {
+                alert("Please paste a ThinkOrSwim order string.");
+                return;
+            }
+
+            // --- TOS PARSER LOGIC ---
+            // Example String: BUY +1 SPY 100 21 JAN 22 450 CALL @3.50 LMT
+            let entryPrice = 0.00;
+            let qty = 1;
+            let type = "Long";
+
+            // Extract Type
+            const upperStr = rawTOS.toUpperCase();
+            if (upperStr.startsWith("SELL") || upperStr.startsWith("SOLD")) type = "Short";
+
+            // Extract Price (find the @ symbol then parses the float)
+            const atIndex = rawTOS.indexOf('@');
+            if (atIndex !== -1) {
+                const afterAt = rawTOS.substring(atIndex + 1).trim();
+                const numMatch = afterAt.match(/^([0-9]*\.?[0-9]*)/);
+                if (numMatch && numMatch[1]) {
+                    entryPrice = parseFloat(numMatch[1]);
+                }
+            }
+
+            // Extract Qty (+1, -2, etc)
+            const qtyMatch = rawTOS.match(/([+-]\d+)/);
+            if (qtyMatch && qtyMatch[1]) {
+                qty = parseInt(qtyMatch[1], 10);
+            }
+
+            if (entryPrice <= 0) {
+                alert("Could not parse a valid entry price from the string. Try again.");
+                return;
+            }
 
             const newTrade = {
                 id: Date.now(),
-                ticker: globalState.currentScanned.ticker,
-                stratNum: stratNum,
-                stratName: stratName,
-                exitRules: exitRules,
-                progress: 0, // 0 to 100 representing mock progression to exit
-                status: 'active', // 'active', 'exit'
-                lastProgressTime: Date.now()
+                ticker: globalState.pendingTrade.ticker,
+                stratNum: globalState.pendingTrade.stratNum,
+                stratName: globalState.pendingTrade.stratName,
+                exitRules: globalState.pendingTrade.exitRules,
+                rawTOS: rawTOS,
+                posType: type,
+                qty: Math.abs(qty),
+                entryPrice: entryPrice,
+                currentPrice: entryPrice, // Initialize mock live price
+                status: 'active'
             };
 
             globalState.activeTrades.unshift(newTrade);
             saveTradesToStorage();
+            closeTOSModal();
             renderActiveTrades();
         }
 
@@ -699,7 +939,25 @@
 
             let html = '';
             globalState.activeTrades.forEach(t => {
-                const isExit = t.status === 'exit';
+                // Ensure backward compatibility with older saved trades before TOS integration
+                const entryPx = t.entryPrice || 0;
+                const currentPx = t.currentPrice || 0;
+                const posType = t.posType || 'Long';
+                const qty = t.qty || 1;
+
+                // Determine PnL for display
+                // (Current Px - Entry Px) / Entry Px for Long. Reversed for short.
+                let pnlRatio = 0;
+                if (entryPx > 0) {
+                    pnlRatio = (currentPx - entryPx) / entryPx;
+                    if (posType === "Short") pnlRatio = -pnlRatio;
+                }
+                const pnlPercentage = (pnlRatio * 100).toFixed(1);
+                const isGreen = pnlRatio >= 0;
+
+                // Exit Condition logic for visual warning (mocked: if Pnl > 50% or Pnl < -20%)
+                const isExit = pnlPercentage >= 50.0 || pnlPercentage <= -20.0;
+
                 const cardClasses = isExit ? 'border-red-600 bg-red-950/20 exit-now-alert' : 'border-slate-700/50 bg-slate-900/50';
 
                 html += `
@@ -708,23 +966,33 @@
                         <div class="font-bold font-mono text-lg ${isExit ? 'text-red-400' : 'text-blue-400'}">${t.ticker}</div>
                         <div class="flex items-center gap-2">
                             <span class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded ${isExit ? 'bg-red-600 text-white' : 'bg-slate-800 text-slate-400'}">
-                                ${isExit ? 'EXIT NOW' : 'IN PROGRESS'}
+                                ${isExit ? 'EXIT TARGET MET' : 'IN PROGRESS'}
                             </span>
                             <button onclick="removeTrade(${t.id})" class="text-slate-500 hover:text-red-400 transition-colors" title="Remove Trade">
                                 <i data-lucide="x" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="text-xs font-semibold text-slate-300 mb-3">${t.stratName}</div>
                     
-                    ${!isExit ? `
-                    <div class="w-full bg-slate-800 rounded-full h-1.5 mb-2 mt-4">
-                        <div class="bg-blue-500 h-1.5 rounded-full transition-all duration-500" style="width: ${t.progress}%"></div>
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="text-[11px] font-semibold text-slate-300 uppercase">${t.stratName}</div>
+                        <div class="text-lg font-mono font-bold ${isGreen ? 'text-emerald-400' : 'text-red-400'}">
+                            ${isGreen ? '+' : ''}${pnlPercentage}%
+                        </div>
                     </div>
-                    <div class="text-[10px] text-slate-500 text-right capitalize mb-4">Tracking active market hours (EST)...</div>
-                    ` : ''}
+                    
+                    <div class="grid grid-cols-2 gap-2 mb-4 bg-slate-900/80 rounded-lg p-2 border border-slate-700/50">
+                        <div class="flex flex-col">
+                            <span class="text-[9px] text-slate-500 uppercase tracking-widest leading-tight">Pos Type</span>
+                            <span class="text-xs font-mono font-medium text-slate-300">${posType} ${qty}</span>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-[9px] text-slate-500 uppercase tracking-widest leading-tight">Entry Px</span>
+                            <span class="text-xs font-mono font-medium text-slate-300">$${entryPx.toFixed(2)}</span>
+                        </div>
+                    </div>
 
-                    <div class="text-[10px] uppercase font-bold ${isExit ? 'text-red-400' : 'text-slate-500'} mb-1 mt-2 tracking-wider">Exit Condition</div>
+                    <div class="text-[10px] uppercase font-bold text-slate-500 mb-1 mt-2 tracking-wider">Exit Condition</div>
                     <div class="text-xs text-slate-400 font-mono leading-relaxed line-clamp-3">${t.exitRules}</div>
                 </li>
                 `;
@@ -733,52 +1001,28 @@
             lucide.createIcons();
         }
 
-        // Mock Background Progress Simulator
+        // Mock Live Market Price Simulator
+        // Periodically adjust the theoretical `currentPrice` of active logged trades to show dynamic P/L 
         function simulateProgress() {
             if (globalState.activeTrades.length === 0) return;
 
+            // Only simulate during roughly realistic market hours (to save loops)
+            const estDate = new Date(new Date().toLocaleString("en-US", { timeZone: "America/New_York" }));
+            const hr = estDate.getHours();
+            const day = estDate.getDay();
+            if (day === 0 || day === 6 || hr < 8 || hr > 16) return;
+
             let needsRender = false;
-            const now = Date.now();
 
             globalState.activeTrades.forEach(t => {
                 if (t.status === 'active') {
-                    if (!t.lastProgressTime) t.lastProgressTime = now;
+                    needsRender = true;
+                    // Mock a tiny fluctuation: between -1.5% and +1.6% of current price randomly to create variance
+                    const tickPercent = (Math.random() * 0.031) - 0.015;
+                    t.currentPrice = t.currentPrice + (t.currentPrice * tickPercent);
 
-                    let hoursPassed = 0;
-                    let checkTime = t.lastProgressTime;
-
-                    // Cap max catch-up to 30 days to avoid long loops if inactive for months
-                    if (now - checkTime > 30 * 24 * 3600000) {
-                        checkTime = now - 30 * 24 * 3600000;
-                    }
-
-                    // Look back through every elapsed hour since we last updated progress
-                    while (checkTime + 3600000 <= now) {
-                        checkTime += 3600000;
-                        const estDateStr = new Date(checkTime).toLocaleString("en-US", { timeZone: "America/New_York", year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false });
-                        const estDate = new Date(estDateStr);
-                        const day = estDate.getDay();
-                        const hr = estDate.getHours();
-                        const min = estDate.getMinutes();
-                        const timeOfDay = hr + (min / 60);
-
-                        // Trading hours: Mon-Fri, 8:30 AM to 4:00 PM EST
-                        if (day >= 1 && day <= 5 && timeOfDay >= 8.5 && timeOfDay < 16.01) {
-                            hoursPassed++;
-                        }
-                    }
-
-                    if (hoursPassed > 0) {
-                        // Increment progress roughly 4% per active trading hour (~25 active hours to reach target)
-                        t.progress += (Math.random() * 5 + 3) * hoursPassed;
-                        t.lastProgressTime = checkTime;
-                        needsRender = true;
-
-                        if (t.progress >= 100) {
-                            t.progress = 100;
-                            t.status = 'exit';
-                        }
-                    }
+                    // Don't let mocked price go below 0.01
+                    if (t.currentPrice <= 0.01) t.currentPrice = 0.01;
                 }
             });
 
@@ -788,8 +1032,8 @@
             }
         }
 
-        // Run simulation every minute to track time progression
-        setInterval(simulateProgress, 60000);
+        // Run simulation every 3 seconds to create a realistic "live ticking" feel for testing
+        setInterval(simulateProgress, 3000);
 
 
         // ---------------------------------------------------
@@ -798,6 +1042,12 @@
 
         function scanTicker(ticker) {
             if (!ticker) return;
+
+            const cleanTicker = ticker.trim().toUpperCase();
+            if (!/^[A-Z]{1,5}$/.test(cleanTicker)) {
+                showToast('Please enter a valid ticker symbol (1-5 letters).', 'error');
+                return;
+            }
 
             // Hide Overlay
             document.getElementById('emptyStateOverlay').classList.add('opacity-0');
@@ -845,8 +1095,9 @@
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('currentDateDisplay').innerText = new Date().toLocaleDateString('en-US', dateOptions);
 
-        // Load active trades on startup
+        // Load active trades & favorites on startup
         loadTradesFromStorage();
+        loadFavoritesFromStorage();
         simulateProgress();
 
     </script>
