@@ -1512,6 +1512,14 @@
         }
 
         async function runMarketScan() {
+            if (globalState.favoriteTickers.length === 0) {
+                showToast("Please add at least one ticker to your favorites bar to scan.", "error");
+                toggleAppMode(false);
+                return;
+            }
+
+            const scanUniverse = globalState.favoriteTickers;
+
             // Arrays to hold passing tickers per strat
             const passes = { 1: [], 2: [], 3: [], 4: [], 5: [] };
             
@@ -1520,8 +1528,8 @@
             
             // Chunk the universe into batches of 5
             const chunkSize = 5;
-            for (let i = 0; i < marketUniverse.length; i += chunkSize) {
-                const chunk = marketUniverse.slice(i, i + chunkSize);
+            for (let i = 0; i < scanUniverse.length; i += chunkSize) {
+                const chunk = scanUniverse.slice(i, i + chunkSize);
                 
                 // Update Badge to show progress
                 for (let stratNum = 1; stratNum <= 5; stratNum++) {
@@ -1546,7 +1554,7 @@
                 await Promise.all(promises);
 
                 // Wait 60 seconds before the next batch to respect the 5 req/min limit, UNLESS this is the last chunk
-                if (i + chunkSize < marketUniverse.length) {
+                if (i + chunkSize < scanUniverse.length) {
                     for (let stratNum = 1; stratNum <= 5; stratNum++) {
                         const badge = document.getElementById(`badge-strat${stratNum}`);
                         badge.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> 60S THROTTLE (API LIMIT)...`;
