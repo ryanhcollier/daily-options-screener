@@ -858,6 +858,18 @@
                 // MACD
                 const macd = calculateMACD(aggs);
 
+                // Proxy Endpoint for IV Rank
+                let ivRank = null; // Will trigger 'manual check' UI if it fails
+                try {
+                    const ivRes = await fetch(`http://localhost:8000/ivrank/${ticker}`);
+                    if (ivRes.ok) {
+                        const ivJson = await ivRes.json();
+                        ivRank = ivJson.ivRank;
+                    }
+                } catch (e) {
+                    console.warn(`IV Rank Proxy offline or failed for ${ticker}.`);
+                }
+
                 const data = {
                     ticker: ticker.toUpperCase(),
                     price: price,
@@ -871,6 +883,7 @@
                     // Strategy 2 Needs
                     sma200: calculateSMA(aggs, 200),
                     rsi14: calculateRSI(aggs, 14),
+                    ivRank: ivRank, // Added dynamic IV rank
 
                     // Strategy 3 Needs
                     sma50: calculateSMA(aggs, 50),
@@ -909,13 +922,19 @@
         }
 
         function evaluateStrategy2(data) {
+            let ivRankCheck = { id: 's2-c3', text: '<span class="text-amber-500 font-bold">[MANUAL]</span> IV Rank: 35% - 70%', pass: true };
+            if (data.ivRank !== null) {
+                const passIv = data.ivRank >= 35 && data.ivRank <= 70;
+                ivRankCheck = { id: 's2-c3', text: `IV Rank: 35% - 70% (Current: ${data.ivRank}%)`, pass: passIv };
+            }
+
             const checks = [
                 { id: 's2-c1', text: 'Price &gt; SMA200', pass: data.price > data.sma200 },
                 { id: 's2-c2', text: 'RSI14 &lt; 30 (Oversold)', pass: data.rsi14 < 30 },
-                { id: 's2-c3', text: '<span class="text-amber-500 font-bold">[MANUAL]</span> IV Rank: 35% - 70%', pass: true } // Removed mock, user must verify manually
+                ivRankCheck
             ];
-            // Only require the first two checks to technically "qualify" for UI purposes, user must manually verify IV Rank
-            const qualified = data.price > data.sma200 && data.rsi14 < 30;
+            
+            const qualified = checks.every(c => c.pass);
             return { checks, qualified, actionType: 'Long Call' };
         }
 
