@@ -502,6 +502,63 @@
                         </div>
                     </div>
 
+                    <!-- Strategy 5: The Common Gap-Fill Fade -->
+                    <div id="card-strat5"
+                        class="bg-slate-800/80 rounded-2xl border border-slate-700 shadow-lg overflow-hidden flex flex-col card-hover relative group">
+                        <div class="absolute top-0 left-0 w-full h-1 bg-slate-700" id="indicator-strat5"></div>
+                        <div class="p-5 flex-grow">
+                            <div class="flex justify-between items-start mb-4">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span
+                                            class="text-[10px] font-bold tracking-wider text-slate-400 uppercase">Strat
+                                            05</span>
+                                        <span
+                                            class="text-[9px] font-bold tracking-wider text-emerald-400 bg-emerald-900/40 px-1.5 py-0.5 rounded border border-emerald-800/50">90%
+                                            WIN RATE</span>
+                                    </div>
+                                    <h3 class="text-lg font-bold text-white leading-tight mt-1">The Common Gap-Fill Fade
+                                    </h3>
+                                </div>
+                                <div id="badge-strat5"
+                                    class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-700 text-slate-400 flex items-center gap-1 border border-slate-600">
+                                    <i data-lucide="minus-circle" class="w-3.5 h-3.5"></i> IDLE
+                                </div>
+                            </div>
+                            <!-- Action Button -->
+                            <button id="btn-take-strat5"
+                                onclick="openTOSModal(5, 'Common Gap-Fill Fade', 'Take profit at previous day close. Strict stop-loss at 0.25% - 0.75% adverse move.')"
+                                class="hidden w-full mb-4 bg-emerald-600 hover:bg-emerald-500 text-white py-1.5 rounded-lg text-xs font-bold tracking-wide transition-colors shadow-sm focus:ring-2 focus:ring-emerald-400 focus:outline-none flex justify-center items-center gap-2">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i> TAKE TRADE
+                            </button>
+
+                            <ul class="text-sm text-slate-300 space-y-2 mb-5 font-mono" id="checklist-strat5">
+                                <li class="flex items-center gap-2"><i data-lucide="circle"
+                                        class="w-3.5 h-3.5 text-slate-600"></i> Open Gap Between 2% and 5%</li>
+                                <li class="flex items-center gap-2"><i data-lucide="circle"
+                                        class="w-3.5 h-3.5 text-slate-600"></i> Low Relative Volume (RV &lt; 1.0)</li>
+                            </ul>
+                            <!-- Scanner Results Container (Hidden in Screener Mode) -->
+                            <div id="scanner-results-strat5"
+                                class="hidden mb-5 space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+                        </div>
+
+                        <div id="details-strat5"
+                            class="transition-all bg-slate-900/50 p-4 border-t border-slate-700/50">
+                            <div class="text-[10px] uppercase font-bold text-blue-400 mb-1 tracking-wider">Why it works
+                            </div>
+                            <div class="text-xs text-slate-400 mb-3 leading-relaxed">Capitalizes on the statistical reality that low-volume gaps fill 85-90% of the time within 2 days, making it an excellent high-winrate mean reversion fade.</div>
+
+                            <div class="text-[10px] uppercase font-bold text-slate-500 mb-1 tracking-wider">Target Setup
+                            </div>
+                            <div class="font-mono text-sm font-semibold text-slate-200 mb-3">Buy Single-Leg Option (Directional Inverse to Gap)</div>
+
+                            <div class="text-[10px] uppercase font-bold text-amber-500/80 mb-1 tracking-wider">Exit
+                                Rules</div>
+                            <div class="font-mono text-xs text-slate-300">Take profit perfectly at previous day close. Stop-Loss: 0.25%-0.75% adverse move.</div>
+                        </div>
+                    </div>
+
                     <!-- Overlay for empty state -->
                     <div id="emptyStateOverlay"
                         class="absolute inset-0 z-10 bg-slate-900/60 backdrop-blur-[2px] rounded-2xl flex flex-col items-center justify-center p-6 border border-slate-700/50 transition-opacity duration-300">
@@ -714,19 +771,34 @@
                 macdSignal: randf(-2, 2),
 
                 // Strategy 4 Needs
-                lowestLow5Day: price * randf(0.95, 1.05)
+                lowestLow5Day: price * randf(0.95, 1.05),
+
+                // Strategy 5 Needs
+                prevClose: price * randf(0.9, 1.1),
+                openPrice: price * randf(0.92, 1.08),
+                relVolume: randf(0.3, 2.5)
             };
 
             // Fix math relationships slightly so sometimes we get true
             // To make the demo robust, give 20% flat chance for some strict gates to just be true
             if (seededRandom() > 0.8) data.dailyMovePct = randf(-0.9, 0.9);
             if (seededRandom() > 0.8) data.rsi14 = randi(15, 29); // For Strat 2
+            
+            // For Strat 5: force a 2-5% gap 15% of the time, and force low relative volume 30% of the time
+            if (seededRandom() > 0.85) {
+                const isGapUp = seededRandom() > 0.5;
+                const gapMagnitude = randf(0.02, 0.05);
+                data.openPrice = isGapUp ? data.prevClose * (1 + gapMagnitude) : data.prevClose * (1 - gapMagnitude);
+            }
+            if (seededRandom() > 0.70) {
+                data.relVolume = randf(0.4, 0.9);
+            }
 
             return data;
         }
 
         // ---------------------------------------------------
-        // 2. Logic Gates (The 4 Strategies)
+        // 2. Logic Gates (The 5 Strategies)
         // ---------------------------------------------------
 
         function evaluateStrategy1(data) {
@@ -763,6 +835,18 @@
         function evaluateStrategy4(data) {
             const checks = [
                 { id: 's4-c1', text: 'Close &lt; 5-Day Lowest Low', pass: data.price < data.lowestLow5Day }
+            ];
+            const qualified = checks.every(c => c.pass);
+            return { checks, qualified };
+        }
+
+        function evaluateStrategy5(data) {
+            const gapPercent = Math.abs((data.openPrice - data.prevClose) / data.prevClose) * 100;
+            const isGapValid = gapPercent >= 2.0 && gapPercent <= 5.0;
+            
+            const checks = [
+                { id: 's5-c1', text: 'Open Gap Between 2% and 5%', pass: isGapValid },
+                { id: 's5-c2', text: 'Low Relative Volume (RV &lt; 1.0)', pass: data.relVolume < 1.0 }
             ];
             const qualified = checks.every(c => c.pass);
             return { checks, qualified };
@@ -1186,7 +1270,7 @@
                 document.getElementById('tickerInput').value = '';
 
                 // Show scanner result containers, hide checklists & take trade buttons
-                for (let i = 1; i <= 4; i++) {
+                for (let i = 1; i <= 5; i++) {
                     document.getElementById(`checklist-strat${i}`).classList.add('hidden');
                     const btnTake = document.getElementById(`btn-take-strat${i}`);
                     if (btnTake) btnTake.classList.add('hidden');
@@ -1214,7 +1298,7 @@
                     overlay.classList.remove('hidden');
                 }
 
-                for (let i = 1; i <= 4; i++) {
+                for (let i = 1; i <= 5; i++) {
                     document.getElementById(`checklist-strat${i}`).classList.remove('hidden');
                     document.getElementById(`scanner-results-strat${i}`).classList.add('hidden');
                     document.getElementById(`scanner-results-strat${i}`).innerHTML = ''; // Clear results
@@ -1228,7 +1312,7 @@
                     scanTicker(globalState.currentScanned.ticker, true);
                 } else {
                     // Reset to idle styling
-                    for (let i = 1; i <= 4; i++) {
+                    for (let i = 1; i <= 5; i++) {
                         document.getElementById(`card-strat${i}`).classList.remove('border-emerald-800/50');
                         document.getElementById(`indicator-strat${i}`).className = 'absolute top-0 left-0 w-full h-1 bg-slate-700';
                         
@@ -1243,18 +1327,19 @@
 
         function runMarketScan() {
             // Arrays to hold passing tickers per strat
-            const passes = { 1: [], 2: [], 3: [], 4: [] };
+            const passes = { 1: [], 2: [], 3: [], 4: [], 5: [] };
 
             marketUniverse.forEach(ticker => {
                 const data = generateMockTechnicals(ticker);
-                if (evaluateStrategy1(data).qualified) passes[1].push({ ticker, type: evaluateStrategy1(data).actionType || 'Long' });
-                if (evaluateStrategy2(data).qualified) passes[2].push({ ticker, type: evaluateStrategy2(data).actionType || 'Long' });
-                if (evaluateStrategy3(data).qualified) passes[3].push({ ticker, type: evaluateStrategy3(data).actionType || 'Long' });
-                if (evaluateStrategy4(data).qualified) passes[4].push({ ticker, type: evaluateStrategy4(data).actionType || 'Long' });
+                if (evaluateStrategy1(data).qualified) passes[1].push({ ticker, type: evaluateStrategy1(data).actionType || 'Long/Spread' });
+                if (evaluateStrategy2(data).qualified) passes[2].push({ ticker, type: evaluateStrategy2(data).actionType || 'Long/Spread' });
+                if (evaluateStrategy3(data).qualified) passes[3].push({ ticker, type: evaluateStrategy3(data).actionType || 'Long/Spread' });
+                if (evaluateStrategy4(data).qualified) passes[4].push({ ticker, type: evaluateStrategy4(data).actionType || 'Long/Spread' });
+                if (evaluateStrategy5(data).qualified) passes[5].push({ ticker, type: evaluateStrategy5(data).actionType || 'Long/Spread' });
             });
 
             // Render to DOM
-            for (let i = 1; i <= 4; i++) {
+            for (let i = 1; i <= 5; i++) {
                 const resultsContainer = document.getElementById(`scanner-results-strat${i}`);
                 const badge = document.getElementById(`badge-strat${i}`);
 
@@ -1320,12 +1405,14 @@
             const res2 = evaluateStrategy2(data);
             const res3 = evaluateStrategy3(data);
             const res4 = evaluateStrategy4(data);
+            const res5 = evaluateStrategy5(data);
 
             // Update DOM
             updateCardUI(1, res1);
             updateCardUI(2, res2);
             updateCardUI(3, res3);
             updateCardUI(4, res4);
+            updateCardUI(5, res5);
 
             lucide.createIcons(); // Re-parse injected icons
         }
