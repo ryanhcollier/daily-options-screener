@@ -682,7 +682,8 @@
             pendingTrade: null, // Holds data temporarily while the TOS Modal is open
             favoriteTickers: [], // Array of pinned tickers
             isScannerMode: true, // Toggle for Market Scanner
-            apiCallTimestamps: [] // Tracks Polygon API calls to respect free tier limit (5/min)
+            apiCallTimestamps: [], // Tracks Polygon API calls to respect free tier limit (5/min)
+            lastScanResults: {} // Cache for scanner results to avoid double-fetching
         };
 
         // Reduced to 10 tickers to support Polygon's Free Tier (5 requests/minute) scanning in 2 minutes
@@ -1788,6 +1789,9 @@
             // Arrays to hold passing tickers per strat
             const passes = { 1: [], 2: [], 3: [], 4: [], 5: [] };
             
+            // Clear cache for new scan
+            globalState.lastScanResults = {};
+
             // Helper to delay execution (60 seconds for Polygon Free Tier)
             const delay = ms => new Promise(res => setTimeout(res, ms));
             
@@ -1809,6 +1813,7 @@
 
                     if (result.success) {
                         const data = result.data;
+                        globalState.lastScanResults[ticker] = { data: data, aggs: result.aggs };
                         if (evaluateStrategy1(data).qualified) passes[1].push({ ticker, type: evaluateStrategy1(data).actionType || 'Long/Spread' });
                         if (evaluateStrategy2(data).qualified) passes[2].push({ ticker, type: evaluateStrategy2(data).actionType || 'Long' });
                         if (evaluateStrategy3(data).qualified) passes[3].push({ ticker, type: evaluateStrategy3(data).actionType || 'Long' });
@@ -1926,23 +1931,36 @@
             // Show loading state while fetching
             document.getElementById('tickerStatsHeader').classList.add('opacity-50', 'pointer-events-none');
 
-            // Check API rate limit before proceeding
-            // This will block and show an overlay if we need to wait
-            await waitForRateLimit();
+            let data, aggs;
+            if (globalState.lastScanResults && globalState.lastScanResults[ticker]) {
+                data = globalState.lastScanResults[ticker].data;
+                aggs = globalState.lastScanResults[ticker].aggs;
+                document.getElementById('tickerStatsHeader').classList.remove('opacity-50', 'pointer-events-none');
+                globalState.currentScanned = data;
+                globalState.currentScannedAggs = aggs;
+            } else {
+                // Check API rate limit before proceeding
+                // This will block and show an overlay if we need to wait
+                await waitForRateLimit();
 
-            // Fetch Live Polygon data
-            const res = await fetchPolygonData(ticker);
-            
-            document.getElementById('tickerStatsHeader').classList.remove('opacity-50', 'pointer-events-none');
-            
-            if (!res.success) {
-                showToast(`Failed to fetch data for ${ticker}. Check API limits.`, 'error');
-                return;
+                // Fetch Live Polygon data
+                const res = await fetchPolygonData(ticker);
+                
+                document.getElementById('tickerStatsHeader').classList.remove('opacity-50', 'pointer-events-none');
+                
+                if (!res.success) {
+                    showToast(`Failed to fetch data for ${ticker}. Check API limits.`, 'error');
+                    return;
+                }
+
+                data = res.data;
+                aggs = res.aggs;
+                globalState.currentScanned = data;
+                globalState.currentScannedAggs = aggs;
+                
+                // Cache it so subsequent clicks don't re-fetch
+                globalState.lastScanResults[ticker] = { data: data, aggs: aggs };
             }
-
-            const data = res.data;
-            globalState.currentScanned = data;
-            globalState.currentScannedAggs = res.aggs;
 
             // Update Header Stats
             document.getElementById('tickerStatsHeader').classList.remove('hidden');
