@@ -858,17 +858,7 @@
                 // MACD
                 const macd = calculateMACD(aggs);
 
-                // Proxy Endpoint for IV Rank
-                let ivRank = null; // Will trigger 'manual check' UI if it fails
-                try {
-                    const ivRes = await fetch(`http://localhost:8000/ivrank/${ticker}`);
-                    if (ivRes.ok) {
-                        const ivJson = await ivRes.json();
-                        ivRank = ivJson.ivRank;
-                    }
-                } catch (e) {
-                    console.warn(`IV Rank Proxy offline or failed for ${ticker}.`);
-                }
+                // Removed IV Rank Proxy endpoint
 
                 const data = {
                     ticker: ticker.toUpperCase(),
@@ -883,7 +873,7 @@
                     // Strategy 2 Needs
                     sma200: calculateSMA(aggs, 200),
                     rsi14: calculateRSI(aggs, 14),
-                    ivRank: ivRank, // Added dynamic IV rank
+                    // Added dynamic IV rank removed, calculate manually
 
                     // Strategy 3 Needs
                     sma50: calculateSMA(aggs, 50),
@@ -922,11 +912,11 @@
         }
 
         function evaluateStrategy2(data) {
-            let ivRankCheck = { id: 's2-c3', text: '<span class="text-amber-500 font-bold">[MANUAL]</span> IV Rank: 35% - 70%', pass: true };
-            if (data.ivRank !== null) {
-                const passIv = data.ivRank >= 35 && data.ivRank <= 70;
-                ivRankCheck = { id: 's2-c3', text: `IV Rank: 35% - 70% (Current: ${data.ivRank}%)`, pass: passIv };
-            }
+            const ivRankCheck = { 
+                id: 's2-c3', 
+                text: '<span class="text-amber-500 font-bold">[MANUAL]</span> <a href="https://www.tastylive.com/concepts-strategies/implied-volatility" target="_blank" class="text-blue-400 hover:text-blue-300 underline underline-offset-2">Calculate IV Rank: 35% - 70%</a>', 
+                pass: true 
+            };
 
             const checks = [
                 { id: 's2-c1', text: 'Price &gt; SMA200', pass: data.price > data.sma200 },
@@ -1895,7 +1885,7 @@
             document.getElementById('tickerStatsHeader').classList.remove('hidden');
             document.getElementById('currentTicker').innerText = data.ticker;
             document.getElementById('currentPrice').innerText = "$" + data.price.toFixed(2);
-            document.getElementById('tickerIVR').innerText = data.ivRank + "%";
+            document.getElementById('tickerIVR').innerText = "--";
             document.getElementById('tickerRSI').innerText = data.rsi14.toFixed(1);
             
             // Render Sparkline
