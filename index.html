@@ -1980,7 +1980,7 @@
         document.getElementById('tickerInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                scanTicker(document.getElementById('tickerInput').value.trim());
+                addFavorite();
             }
         });
 
