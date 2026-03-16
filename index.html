@@ -166,7 +166,7 @@
                 </div>
             </div>
 
-            <div class="flex items-center justify-between min-h-[36px] mt-2 mb-1">
+            <div id="headerTools" class="flex items-center justify-between min-h-[36px] mt-2 mb-1">
                 <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
                     <!-- Favorites go here -->
                     <div id="favoritesContainer" class="flex gap-2 items-center"></div>
@@ -1640,6 +1640,7 @@
             const overlay = document.getElementById('emptyStateOverlay');
             const leftSidebar = document.getElementById('leftSidebar');
             const mainContent = document.getElementById('mainContent');
+            const headerTools = document.getElementById('headerTools');
 
             if (isScanner) {
                 // Hide single-ticker view elements
@@ -1653,6 +1654,8 @@
 
                 // Hide header stats in scanner mode
                 if (headerStats) headerStats.classList.add('hidden');
+                // Show tools in scanner mode
+                if (headerTools) headerTools.classList.remove('hidden');
 
                 // Show scanner result containers, hide checklists & take trade buttons
                 for (let i = 1; i <= 5; i++) {
@@ -1673,9 +1676,6 @@
                     badge.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> SCANNING...';
                 }
                 lucide.createIcons();
-
-                // Run Scan
-                setTimeout(runMarketScan, 300);
             } else {
                 // Revert to single-ticker mode
                 if (leftSidebar) leftSidebar.classList.remove('hidden');
@@ -1684,6 +1684,9 @@
                     mainContent.classList.add('lg:col-span-3');
                 }
                 if (headerStats) headerStats.classList.remove('hidden');
+                
+                // Hide tools in trading mode
+                if (headerTools) headerTools.classList.add('hidden');
                 
                 if (!globalState.currentScanned && overlay) {
                     overlay.classList.remove('hidden');
@@ -1747,6 +1750,9 @@
                 const promises = chunk.map(async (ticker) => {
                     const result = await fetchPolygonData(ticker);
                     if (result.success) {
+                        globalState.cachedScanData = globalState.cachedScanData || {};
+                        globalState.cachedScanData[ticker] = result;
+                        
                         const data = result.data;
                         if (evaluateStrategy1(data).qualified) passes[1].push({ ticker, type: evaluateStrategy1(data).actionType || 'Long/Spread' });
                         if (evaluateStrategy2(data).qualified) passes[2].push({ ticker, type: evaluateStrategy2(data).actionType || 'Long' });
@@ -1853,10 +1859,6 @@
                 return;
             }
 
-            // Check API rate limit before proceeding
-            // This will block and show an overlay if we need to wait
-            await waitForRateLimit();
-
             // Force app out of scanner mode if a specific ticker is being looked up manually or clicked from the list
             if (globalState.isScannerMode && !isRefresh) {
                 toggleAppMode(false);
@@ -1869,8 +1871,16 @@
             // Show loading state while fetching
             document.getElementById('tickerStatsHeader').classList.add('opacity-50', 'pointer-events-none');
 
-            // Fetch Live Polygon data
-            const res = await fetchPolygonData(ticker);
+            let res;
+            if (globalState.cachedScanData && globalState.cachedScanData[ticker] && !isRefresh) {
+                res = globalState.cachedScanData[ticker];
+            } else {
+                // Check API rate limit before proceeding
+                // This will block and show an overlay if we need to wait
+                await waitForRateLimit();
+                // Fetch Live Polygon data
+                res = await fetchPolygonData(ticker);
+            }
             
             document.getElementById('tickerStatsHeader').classList.remove('opacity-50', 'pointer-events-none');
             
