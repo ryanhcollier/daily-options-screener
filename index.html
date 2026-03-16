@@ -140,15 +140,15 @@
             class="relative z-40 flex flex-col gap-2 bg-slate-800/80 p-4 md:p-6 rounded-2xl border border-slate-700/50 shadow-lg backdrop-blur-md">
             <div class="flex justify-between items-start border-b border-slate-700/50 pb-3 mb-1 min-h-[50px]">
                 <div class="flex flex-col gap-1 items-start">
-                    <!-- App Logo -->
-                    <div class="flex items-center gap-1.5">
+                    <!-- App Logo & Version -->
+                    <div class="flex items-center gap-2">
                         <span class="text-2xl font-black tracking-tighter text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)] italic">McDuck</span>
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700/50">v1.1.4</span>
                     </div>
-                    <!-- Date & Version -->
+                    <!-- Date -->
                     <div class="flex items-center gap-2 text-slate-500 text-xs font-mono font-medium tracking-wide">
                         <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
                         <span id="currentDateDisplay">--</span>
-                        <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700/50">v1.1.4</span>
                     </div>
                 </div>
 
@@ -166,31 +166,31 @@
                 </div>
             </div>
 
-            <div id="headerTools" class="flex items-center justify-between min-h-[36px] mt-2 mb-1">
-                <div class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
-                    <!-- Favorites go here -->
-                    <div id="favoritesContainer" class="flex gap-2 items-center"></div>
-                </div>
-
+            <div id="headerTools" class="flex flex-col md:flex-row items-start md:items-center justify-between min-h-[36px] mt-2 mb-1 gap-3 md:gap-0">
                 <!-- Tools Group (Search & +) -->
-                <div class="flex items-center gap-3 shrink-0 ml-4">
-                    <div class="relative group w-auto md:w-36 lg:w-48">
+                <div class="flex items-center gap-3 shrink-0 w-full md:w-auto">
+                    <div class="relative group w-full md:w-48 lg:w-56">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i data-lucide="search"
                                 class="h-4 w-4 text-slate-500 group-focus-within:text-blue-400 transition-colors"></i>
                         </div>
                         <input type="text" id="tickerInput" onclick="this.value=''"
-                            class="block w-full pl-9 pr-3 py-1.5 border border-slate-700 rounded-lg leading-5 bg-slate-800/80 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm uppercase transition-all shadow-inner"
+                            class="block w-full pl-9 pr-3 py-1.5 md:py-2 border border-slate-700 rounded-lg leading-5 bg-slate-800/80 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm uppercase transition-all shadow-inner"
                             placeholder="TICKER" autocomplete="off">
                         <button type="button" onclick="addFavorite()" title="Add Favorite Ticker"
-                            class="absolute inset-y-1 right-1 bg-slate-700 hover:bg-slate-600 text-slate-200 px-2.5 py-0.5 rounded md:rounded border border-slate-600 text-[10px] sm:text-xs font-bold transition-colors shadow-sm focus:ring-2 focus:ring-slate-400 focus:outline-none">
+                            class="absolute inset-y-1 md:inset-y-1.5 right-1 bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-0.5 rounded border border-slate-600 text-xs font-bold transition-colors shadow-sm focus:ring-2 focus:ring-slate-400 focus:outline-none">
                             ADD
                         </button>
                     </div>
                     <button id="scanBtn"
-                        class="shrink-0 flex items-center justify-center gap-1.5 px-4 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs uppercase transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 border border-blue-500/50">
+                        class="shrink-0 flex items-center justify-center gap-1.5 px-4 h-9 md:h-10 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm uppercase transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 border border-blue-500/50">
                         <i data-lucide="radar" class="w-4 h-4"></i> SCAN
                     </button>
+                </div>
+
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 w-full md:w-auto scrollbar-hide md:justify-end">
+                    <!-- Favorites go here -->
+                    <div id="favoritesContainer" class="flex gap-2 items-center"></div>
                 </div>
             </div>
         </header>
