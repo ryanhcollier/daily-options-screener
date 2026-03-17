@@ -141,9 +141,9 @@
             <div class="flex justify-between items-start border-b border-slate-700/50 pb-3 mb-1 min-h-[50px]">
                 <div class="flex flex-col gap-1 items-start">
                     <!-- App Logo & Version -->
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-baseline gap-2">
                         <span class="text-2xl font-black tracking-tighter text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.5)] italic">McDuck</span>
-                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700/50">v1.1.4</span>
+                        <span class="text-xs font-bold text-slate-500">v1.1.5</span>
                     </div>
                     <!-- Date -->
                     <div class="flex items-center gap-2 text-slate-500 text-xs font-mono font-medium tracking-wide">
@@ -899,6 +899,78 @@
         }
 
         // ---------------------------------------------------
+        // Polygon.io Options Engine
+        // ---------------------------------------------------
+
+        async function fetchOptionsChain(ticker) {
+            try {
+                globalState.apiCallTimestamps.push(Date.now());
+                
+                const gte = new Date();
+                gte.setDate(gte.getDate() + 5);
+                const lte = new Date();
+                lte.setDate(lte.getDate() + 60);
+
+                const gteStr = gte.toISOString().split('T')[0];
+                const lteStr = lte.toISOString().split('T')[0];
+
+                const res = await fetch(`https://api.polygon.io/v3/reference/options/contracts?underlying_ticker=${ticker.toUpperCase()}&expiration_date.gte=${gteStr}&expiration_date.lte=${lteStr}&expired=false&limit=1000&apiKey=${POLYGON_API_KEY}`);
+                const json = await res.json();
+                
+                if (!json.results) return [];
+                return json.results;
+            } catch (err) {
+                console.error("Polygon options fetch failed for", ticker, err);
+                return [];
+            }
+        }
+
+        function findNearestOption(chain, type, targetDte, targetStrikePrice) {
+            if (!chain || chain.length === 0) return null;
+            
+            let filtered = chain.filter(c => c.contract_type === type);
+            if (filtered.length === 0) return null;
+
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + targetDte);
+            
+            const dow = targetDate.getDay();
+            const daysToFriday = (5 - dow + 7) % 7;
+            targetDate.setDate(targetDate.getDate() + (daysToFriday === 0 ? 0 : (daysToFriday > 3 ? daysToFriday - 7 : daysToFriday)));
+            
+            const targetTime = targetDate.getTime();
+
+            let closestExpDiff = Infinity;
+            let closestExpDateStr = null;
+            
+            filtered.forEach(c => {
+                const expDate = new Date(c.expiration_date + 'T12:00:00Z');
+                const diff = Math.abs(expDate.getTime() - targetTime);
+                if (diff < closestExpDiff) {
+                    closestExpDiff = diff;
+                    closestExpDateStr = c.expiration_date;
+                }
+            });
+
+            if (!closestExpDateStr) return null;
+
+            filtered = filtered.filter(c => c.expiration_date === closestExpDateStr);
+
+            let closestStrikeDiff = Infinity;
+            let bestOption = null;
+
+            filtered.forEach(c => {
+                const diff = Math.abs(c.strike_price - targetStrikePrice);
+                if (diff < closestStrikeDiff) {
+                    closestStrikeDiff = diff;
+                    bestOption = c;
+                }
+            });
+
+            return bestOption;
+        }
+
+        // ---------------------------------------------------
         // 2. Logic Gates (The 5 Strategies)
         // ---------------------------------------------------
 
@@ -1014,39 +1086,60 @@
             date.setDate(date.getDate() + daysForward);
             const dow = date.getDay();
             const daysToFriday = (5 - dow + 7) % 7;
-            // Snap to nearest Friday (assuming standard monthly/weekly expirations mostly land on Friday)
             date.setDate(date.getDate() + (daysToFriday === 0 ? 0 : daysToFriday > 3 ? daysToFriday - 7 : daysToFriday));
             
             const formatter = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
             return formatter.format(date).toUpperCase();
         }
 
-        function updateDynamicSetups(data) {
+        function formatRealOption(opt, fallbackText) {
+            if (!opt) return fallbackText;
+            const date = new Date(opt.expiration_date + 'T12:00:00Z');
+            const formatter = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+            return `$${opt.strike_price} ${opt.contract_type.charAt(0).toUpperCase() + opt.contract_type.slice(1)} / ${formatter.format(date).toUpperCase()}`;
+        }
+
+        function updateDynamicSetups(data, optionsChain = []) {
             const price = data.price;
             const sd = data.sd20 || (price * 0.05); // Fallback to 5% if missing
             
-            // Strat 1: Trend Call Credit Spread (25 Delta) -> short call ~0.6 SD out.
-            const s1Short = Math.round(price + (sd * 0.6));
-            const s1Long = s1Short + 1;
-            document.getElementById('setup-strat1').innerText = `Sell $${s1Short} Call / Buy $${s1Long} Call / ${getTargetExpiration(9)}`;
+            // Strat 1: Trend Call Credit Spread (25 Delta)
+            const s1ShortTarget = Math.round(price + (sd * 0.6));
+            const opt1 = findNearestOption(optionsChain, 'call', 9, s1ShortTarget);
+            if (opt1) {
+                const chainExpirationMatch = optionsChain.filter(c => c.contract_type === 'call' && c.expiration_date === opt1.expiration_date && c.strike_price > opt1.strike_price);
+                chainExpirationMatch.sort((a, b) => a.strike_price - b.strike_price);
+                const opt1Long = chainExpirationMatch[0];
+                
+                const shortText = `$${opt1.strike_price} Call`;
+                const longText = opt1Long ? `$${opt1Long.strike_price} Call` : `$${opt1.strike_price + 1} Call`;
+                const dateText = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: '2-digit' }).format(new Date(opt1.expiration_date + 'T12:00:00Z')).toUpperCase();
+                document.getElementById('setup-strat1').innerText = `Sell ${shortText} / Buy ${longText} / ${dateText}`;
+            } else {
+                document.getElementById('setup-strat1').innerText = `Sell $${s1ShortTarget} Call / Buy $${s1ShortTarget + 1} Call / ${getTargetExpiration(9)}`;
+            }
             
-            // Strat 2: Mean-Revert Put (30 Delta) -> short put ~0.5 SD out.
-            const s2Short = Math.round(price - (sd * 0.5));
-            document.getElementById('setup-strat2').innerText = `Sell $${s2Short} Put / ${getTargetExpiration(45)}`;
+            // Strat 2: Mean-Revert Put (30 Delta)
+            const s2ShortTarget = Math.round(price - (sd * 0.5));
+            const opt2 = findNearestOption(optionsChain, 'put', 45, s2ShortTarget);
+            document.getElementById('setup-strat2').innerText = opt2 ? `Sell ${formatRealOption(opt2)}` : `Sell $${s2ShortTarget} Put / ${getTargetExpiration(45)}`;
             
-            // Strat 3: Covered Call Protocol (30 Delta) -> short call ~0.5 SD out.
-            const s3Short = Math.round(price + (sd * 0.5));
-            document.getElementById('setup-strat3').innerText = `Sell $${s3Short} Call / ${getTargetExpiration(45)}`;
+            // Strat 3: Covered Call Protocol (30 Delta)
+            const s3ShortTarget = Math.round(price + (sd * 0.5));
+            const opt3 = findNearestOption(optionsChain, 'call', 45, s3ShortTarget);
+            document.getElementById('setup-strat3').innerText = opt3 ? `Sell ${formatRealOption(opt3)}` : `Sell $${s3ShortTarget} Call / ${getTargetExpiration(45)}`;
             
-            // Strat 4: 5-Day Low Mean Reversion (60 Delta ITM) -> long call ~0.2 SD ITM.
-            const s4Strike = Math.round(price - (sd * 0.2));
-            document.getElementById('setup-strat4').innerText = `Buy $${s4Strike} ITM Call / ${getTargetExpiration(21)}`;
+            // Strat 4: 5-Day Low Mean Reversion (60 Delta ITM)
+            const s4Target = Math.round(price - (sd * 0.2));
+            const opt4 = findNearestOption(optionsChain, 'call', 21, s4Target);
+            document.getElementById('setup-strat4').innerText = opt4 ? `Buy ITM ${formatRealOption(opt4)}` : `Buy $${s4Target} ITM Call / ${getTargetExpiration(21)}`;
             
-            // Strat 5: Gap Fill Fade -> Inverse to gap direction.
+            // Strat 5: Gap Fill Fade
             const gapIsUp = data.openPrice > data.prevClose;
-            const s5Action = gapIsUp ? "Put" : "Call";
-            const s5Strike = gapIsUp ? Math.floor(price) : Math.ceil(price);
-            document.getElementById('setup-strat5').innerText = `Buy $${s5Strike} ${s5Action} / ${getTargetExpiration(7)}`;
+            const s5Action = gapIsUp ? "put" : "call";
+            const s5StrikeTarget = gapIsUp ? Math.floor(price) : Math.ceil(price);
+            const opt5 = findNearestOption(optionsChain, s5Action, 7, s5StrikeTarget);
+            document.getElementById('setup-strat5').innerText = opt5 ? `Buy ${formatRealOption(opt5)}` : `Buy $${s5StrikeTarget} ${s5Action.charAt(0).toUpperCase() + s5Action.slice(1)} / ${getTargetExpiration(7)}`;
         }
 
         // ---------------------------------------------------
@@ -1970,7 +2063,7 @@
             document.getElementById('tickerRSI').innerText = data.rsi14.toFixed(1);
             
             // Render Sparkline
-            renderSparkline(res.aggs);
+            renderSparkline(aggs);
 
             // Execute logic gates
             const res1 = evaluateStrategy1(data);
@@ -1978,6 +2071,19 @@
             const res3 = evaluateStrategy3(data);
             const res4 = evaluateStrategy4(data);
             const res5 = evaluateStrategy5(data);
+
+            let optionsChain = [];
+            if (res1.qualified || res2.qualified || res3.qualified || res4.qualified || res5.qualified) {
+                if (globalState.lastScanResults[cleanTicker]?.optionsChain) {
+                    optionsChain = globalState.lastScanResults[cleanTicker].optionsChain;
+                } else {
+                    await waitForRateLimit();
+                    optionsChain = await fetchOptionsChain(cleanTicker);
+                    if (globalState.lastScanResults[cleanTicker]) {
+                        globalState.lastScanResults[cleanTicker].optionsChain = optionsChain;
+                    }
+                }
+            }
 
             // Update DOM
             updateCardUI(1, res1);
@@ -1987,7 +2093,7 @@
             updateCardUI(5, res5);
             
             // Inject dynamically calculated setups
-            updateDynamicSetups(data);
+            updateDynamicSetups(data, optionsChain);
 
             lucide.createIcons(); // Re-parse injected icons
         }
